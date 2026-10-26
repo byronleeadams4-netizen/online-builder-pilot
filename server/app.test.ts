@@ -6,6 +6,8 @@ import { openDb } from './db.ts';
 import { customerPriceCents, normalizePhone } from './pricing.ts';
 import { seedProducts } from './seed.ts';
 
+process.env.ADMIN_PHONES = '+27820000001';
+
 let base = '';
 let close: () => void;
 const db = openDb(':memory:');
@@ -111,5 +113,97 @@ describe('orders', () => {
   it('rejects webhooks with a bad signature', async () => {
     const res = await fetch(`${base}/api/paystack/webhook`, { method: 'POST', body: '{}', headers: { 'x-paystack-signature': 'nope' } });
     assert.equal(res.status, 401);
+  });
+});
+
+describe('admin', () => {
+  const adm = (path: string, token: string, body?: unknown, method?: string) => call(`/api/admin${path}`, { token, body, method });
+
+  async function paidOrder(customerPhone: string) {
+    const token = await login(customerPhone);
+    const { products } = await (await call('/api/products')).json();
+    const { orderId, paymentUrl } = await (
+      await call('/api/orders', { token, body: { address: '7 Admin Test Road, Lansdowne, Cape Town', items: [{ id: products[0].id, qty: 2 }] } })
+    ).json();
+    await call(`/api/dev/mock-pay/${new URL(paymentUrl).searchParams.get('mockPay')}`, { method: 'POST', token });
+    return { orderId: orderId as number, customerToken: token, productId: products[0].id as number };
+  }
+
+  it('keeps customers out and lets listed admins in', async () => {
+    const customer = await login('0829990001');
+    assert.equal((await adm('/orders', customer)).status, 403);
+    assert.equal((await call('/api/admin/orders')).status, 401);
+    const admin = await login('0820000001');
+    assert.equal((await adm('/orders', admin)).status, 200);
+    assert.equal((await (await call('/api/me', { token: admin })).json()).isAdmin, true);
+    assert.equal((await (await call('/api/me', { token: customer })).json()).isAdmin, false);
+  });
+
+  it('runs an order from paid to delivered and then pays the store once', async () => {
+    const admin = await login('0820000001');
+    const { orderId, customerToken } = await paidOrder('0829990002');
+
+    const driver = await (await adm('/drivers', admin, { name: 'Sipho', phone: '0731234567', vehicle: 'bakkie' })).json();
+    // Unverified drivers can't take jobs.
+    assert.equal((await adm(`/orders/${orderId}/assign`, admin, { driverId: driver.id })).status, 409);
+    await adm(`/drivers/${driver.id}`, admin, { verified: true }, 'PATCH');
+
+    const assigned = await (await adm(`/orders/${orderId}/assign`, admin, { driverId: driver.id })).json();
+    assert.equal(assigned.status, 'assigned');
+    assert.equal(assigned.driver.name, 'Sipho');
+    assert.equal((await (await call(`/api/orders/${orderId}`, { token: customerToken })).json()).status, 'assigned');
+
+    // Can't skip a step.
+    assert.equal((await adm(`/orders/${orderId}/status`, admin, { status: 'delivered' })).status, 409);
+    assert.equal((await adm(`/orders/${orderId}/status`, admin, { status: 'collected' })).status, 200);
+    const done = await (await adm(`/orders/${orderId}/status`, admin, { status: 'delivered' })).json();
+    assert.equal(done.status, 'delivered');
+    assert.ok(done.deliveredAt);
+    assert.ok(done.markupCents > 0);
+
+    const before = await (await adm('/payouts', admin)).json();
+    const row = before.payouts.find((p: { orderId: number }) => p.orderId === orderId);
+    assert.equal(row.amountCents, done.storeCostCents);
+    assert.equal(row.due, false); // paid just now, due in 2 days
+    assert.equal((await (await adm(`/payouts/${orderId}/mark-paid`, admin, {})).json()).ok, true);
+    assert.equal((await adm(`/payouts/${orderId}/mark-paid`, admin, {})).status, 409);
+  });
+
+  it('shows a payout as due once two days have passed', async () => {
+    const admin = await login('0820000001');
+    const { orderId } = await paidOrder('0829990003');
+    const driver = await (await adm('/drivers', admin, { name: 'Thandi', phone: '0749876543', vehicle: 'car' })).json();
+    await adm(`/drivers/${driver.id}`, admin, { verified: true }, 'PATCH');
+    await adm(`/orders/${orderId}/assign`, admin, { driverId: driver.id });
+    await adm(`/orders/${orderId}/status`, admin, { status: 'collected' });
+    await adm(`/orders/${orderId}/status`, admin, { status: 'delivered' });
+    db.prepare("UPDATE orders SET paid_at = datetime('now', '-3 days') WHERE id = ?").run(orderId);
+    const res = await (await adm('/payouts', admin)).json();
+    assert.equal(res.payouts.find((p: { orderId: number }) => p.orderId === orderId).due, true);
+    assert.ok(res.dueNowCents > 0);
+  });
+
+  it('lets the price list change what customers pay and hide out-of-stock items', async () => {
+    const admin = await login('0820000001');
+    const { products } = await (await call('/api/products')).json();
+    const p = products[2];
+    await adm(`/products/${p.id}`, admin, { shelfPriceCents: 10000 }, 'PATCH');
+    const after = (await (await call('/api/products')).json()).products.find((x: { id: number }) => x.id === p.id);
+    assert.equal(after.priceCents, customerPriceCents(10000));
+
+    await adm(`/products/${p.id}`, admin, { inStock: false }, 'PATCH');
+    const customer = await login('0829990004');
+    const res = await call('/api/orders', { token: customer, body: { address: '3 Stock Street, Ottery, Cape Town', items: [{ id: p.id, qty: 1 }] } });
+    assert.equal(res.status, 409);
+
+    assert.equal((await adm(`/products/${p.id}`, admin, { shelfPriceCents: -5 }, 'PATCH')).status, 400);
+    assert.equal((await adm('/products', admin, { name: 'Test item', unit: 'each', category: 'Tools', shelfPriceCents: 1500 })).status, 201);
+  });
+
+  it('only cancels orders that have not been collected', async () => {
+    const admin = await login('0820000001');
+    const { orderId } = await paidOrder('0829990005');
+    assert.equal((await adm(`/orders/${orderId}/status`, admin, { status: 'cancelled' })).status, 200);
+    assert.equal((await adm(`/orders/${orderId}/status`, admin, { status: 'collected' })).status, 409);
   });
 });

@@ -30,3 +30,21 @@ label { display: block; margin-top: 16px; font-weight: 600; font-size: 14px; }
 .dev { background: var(--soft); padding: 12px; border-radius: 8px; margin: 12px 0; }
 .status { font-weight: 700; font-size: 18px; }
 .status.delivered { color: #15803d; } .status.cancelled { color: var(--danger); }
+.tabs, .seg { display: flex; gap: 4px; margin: 12px 0; flex-wrap: wrap; }
+.tabs button, .seg button, .smallbtn, .actions button { padding: 10px 14px; border: 1px solid var(--line); border-radius: 8px; background: none; color: var(--fg); font: inherit; cursor: pointer; }
+.tabs button.on, .seg button.on { background: var(--soft); border-color: var(--brand); }
+.acard { border: 1px solid var(--line); border-radius: 10px; padding: 12px; margin: 12px 0; display: grid; gap: 4px; }
+.acard .row { border: 0; padding: 0; }
+.tag { font-size: 13px; padding: 2px 8px; border-radius: 999px; background: var(--soft); }
+.tag.delivered { background: #dcfce7; color: #166534; } .tag.cancelled { background: #fee2e2; color: var(--danger); }
+.actions { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+.actions .danger { color: var(--danger); border-color: var(--danger); }
+label.inline { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+label.inline select, select { padding: 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--fg); font: inherit; }
+.checks { display: grid; gap: 4px; justify-items: end; }
+.checks label { margin: 0; font-weight: 400; }
+.checks input[type=checkbox], label input[type=checkbox] { width: auto; margin: 0 4px 0 0; }
+input.price { width: 90px; margin: 0; padding: 8px; text-align: right; }
+.stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 12px 0; }
+.stats > div { border: 1px solid var(--line); border-radius: 10px; padding: 12px; } .stats b { font-size: 20px; }
+form select { width: 100%; margin: 12px 0 4px; }

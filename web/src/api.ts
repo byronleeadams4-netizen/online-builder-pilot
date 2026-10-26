@@ -32,6 +32,7 @@ export const rand = (cents: number) => `R${(cents / 100).toLocaleString('en-ZA',
 export const STATUS_LABEL: Record<string, string> = {
   pending_payment: 'Waiting for payment',
   paid: 'Paid. The store is packing your order',
+  assigned: 'A driver is on the way to collect it',
   collected: 'Driver has collected it',
   delivered: 'Delivered',
   cancelled: 'Cancelled',

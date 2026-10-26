@@ -31,6 +31,15 @@ export function openDb(path = process.env.DB_PATH ?? 'online-builder.db') {
       shelf_price_cents INTEGER NOT NULL,
       in_stock INTEGER NOT NULL DEFAULT 1
     );
+    CREATE TABLE IF NOT EXISTS drivers (
+      id INTEGER PRIMARY KEY,
+      name TEXT NOT NULL,
+      phone TEXT NOT NULL UNIQUE,
+      vehicle TEXT NOT NULL,
+      verified INTEGER NOT NULL DEFAULT 0,
+      active INTEGER NOT NULL DEFAULT 1,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
     CREATE TABLE IF NOT EXISTS orders (
       id INTEGER PRIMARY KEY,
       user_id INTEGER NOT NULL REFERENCES users(id),
@@ -43,7 +52,10 @@ export function openDb(path = process.env.DB_PATH ?? 'online-builder.db') {
       store_cost_cents INTEGER NOT NULL,
       payment_ref TEXT NOT NULL UNIQUE,
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
-      paid_at TEXT
+      paid_at TEXT,
+      driver_id INTEGER REFERENCES drivers(id),
+      delivered_at TEXT,
+      store_paid_at TEXT
     );
     CREATE TABLE IF NOT EXISTS order_items (
       id INTEGER PRIMARY KEY,
@@ -55,6 +67,11 @@ export function openDb(path = process.env.DB_PATH ?? 'online-builder.db') {
       shelf_price_cents INTEGER NOT NULL
     );
   `);
+  // Local databases created before the admin view existed lack these columns.
+  const cols = (db.prepare('PRAGMA table_info(orders)').all() as { name: string }[]).map((c) => c.name);
+  for (const [name, def] of [['driver_id', 'INTEGER REFERENCES drivers(id)'], ['delivered_at', 'TEXT'], ['store_paid_at', 'TEXT']]) {
+    if (!cols.includes(name)) db.exec(`ALTER TABLE orders ADD COLUMN ${name} ${def}`);
+  }
   return db;
 }
 

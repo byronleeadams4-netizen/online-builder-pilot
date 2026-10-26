@@ -1,8 +1,9 @@
 import crypto from 'node:crypto';
 import express, { type NextFunction, type Request, type Response } from 'express';
 import type { Db } from './db.ts';
-import { config, mockPaymentsEnabled } from './config.ts';
+import { config, isAdminPhone, mockPaymentsEnabled } from './config.ts';
 import { customerPriceCents, normalizePhone } from './pricing.ts';
+import { adminRouter, requireAdmin } from './admin.ts';
 import { initializeTransaction, validWebhookSignature, verifyTransaction } from './paystack.ts';
 
 const OTP_TTL_MS = 5 * 60_000;
@@ -97,8 +98,11 @@ export function createApp(db: Db) {
   }
 
   app.get('/api/me', requireAuth, (req, res) => {
-    res.json(db.prepare('SELECT id, phone, name FROM users WHERE id = ?').get((req as AuthedRequest).userId));
+    const u = db.prepare('SELECT id, phone, name FROM users WHERE id = ?').get((req as AuthedRequest).userId) as { id: number; phone: string; name: string | null };
+    res.json({ ...u, isAdmin: isAdminPhone(u.phone) });
   });
+
+  app.use('/api/admin', requireAuth, requireAdmin(db), adminRouter(db));
 
   // ---------- catalogue ----------
   app.get('/api/products', (_req, res) => {

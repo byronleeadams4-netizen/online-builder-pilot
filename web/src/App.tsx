@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Admin } from './Admin';
 import { api, ApiError, getToken, Order, Product, rand, setToken, STATUS_LABEL } from './api';
 
-type View = 'shop' | 'checkout' | 'orders' | 'order';
+type View = 'shop' | 'checkout' | 'orders' | 'order' | 'admin';
 type Cart = Record<number, number>;
 
 export default function App() {
@@ -12,6 +13,7 @@ export default function App() {
   const [products, setProducts] = useState<Product[]>([]);
   const [deliveryFee, setDeliveryFee] = useState(0);
   const [mockPay, setMockPay] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     api<{ products: Product[]; deliveryFeeCents: number }>('/api/products').then((d) => {
@@ -24,7 +26,12 @@ export default function App() {
     setMockPay(q.get('mockPay'));
   }, []);
 
-  const logout = () => { setToken(null); setAuthed(false); setView('shop'); };
+  useEffect(() => {
+    if (!authed) return;
+    api<{ isAdmin: boolean }>('/api/me').then((m) => setIsAdmin(m.isAdmin)).catch(() => {});
+  }, [authed]);
+
+  const logout = () => { setToken(null); setAuthed(false); setIsAdmin(false); setView('shop'); };
   const goOrder = (id: number) => { window.history.replaceState({}, '', '/'); setMockPay(null); setOrderId(id); setView('order'); };
 
   if (!authed) return <Login onDone={() => setAuthed(true)} />;
@@ -36,12 +43,14 @@ export default function App() {
         <nav>
           <button className={view === 'shop' || view === 'checkout' ? 'on' : ''} onClick={() => setView('shop')}>Shop</button>
           <button className={view === 'orders' || view === 'order' ? 'on' : ''} onClick={() => setView('orders')}>My orders</button>
+          {isAdmin && <button className={view === 'admin' ? 'on' : ''} onClick={() => setView('admin')}>Admin</button>}
           <button onClick={logout}>Log out</button>
         </nav>
       </header>
       {view === 'shop' && <Shop products={products} cart={cart} setCart={setCart} deliveryFee={deliveryFee} onCheckout={() => setView('checkout')} />}
       {view === 'checkout' && <Checkout products={products} cart={cart} deliveryFee={deliveryFee} onBack={() => setView('shop')} onExpired={logout} />}
       {view === 'orders' && <Orders onOpen={goOrder} onExpired={logout} />}
+      {view === 'admin' && isAdmin && <Admin onExpired={logout} />}
       {view === 'order' && orderId !== null && <OrderStatus id={orderId} mockPayRef={mockPay} onExpired={logout} />}
     </div>
   );
