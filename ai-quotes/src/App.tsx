@@ -443,6 +443,7 @@ export default function App() {
                     onSetAllNeed={handleSetAllNeed}
                     onNextStage={() => handleSelectStage(5)}
                     onPrevStage={() => handleSelectStage(3)}
+                    onDoItNow={() => handleSelectStage(3)}
                   />
                 </div>
               </div>

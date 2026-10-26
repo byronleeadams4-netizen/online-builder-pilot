@@ -40,7 +40,7 @@ export const STAGES: Stage[] = [
   },
   {
     id: 5,
-    label: 'Stores & 1-Click Order',
+    label: 'Stores & Handoff',
     shortLabel: '5. Stores & Deals',
     icon: <Store className="w-4 h-4" />,
     description: 'Radar map, aisle quotes & curbside reservation',

@@ -41,4 +41,14 @@ export const PRESET_SCENARIOS: PresetScenario[] = [
     imagePath: '/src/assets/images/diy_cracked_floor_tile_1792409759562.jpg',
     userPrompt: 'Heavy appliance dropped and shattered one floor tile. Surrounding tiles are intact, but need to extract the broken piece, clean thinset, and reset replacement.',
   },
+  {
+    id: 'backyard_fence_panel',
+    title: 'Broken Backyard Fence Slat',
+    category: 'Backyard & Outdoors',
+    subtitle: 'Wind-snapped timber slat on a garden fence, rails still solid',
+    difficulty: 'Beginner',
+    estimatedTime: '45 mins',
+    imagePath: '/src/assets/images/diy_backyard_fence.svg',
+    userPrompt: 'A slat on our backyard fence snapped in the wind. The posts and rails are fine. I want to fix it myself today with what I have at home.',
+  },
 ];

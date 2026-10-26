@@ -21,6 +21,7 @@ interface ChecklistSidePanelProps {
   onScrollToStores?: () => void;
   onNextStage?: () => void;
   onPrevStage?: () => void;
+  onDoItNow?: () => void;
 }
 
 export const ChecklistSidePanel: React.FC<ChecklistSidePanelProps> = ({
@@ -31,6 +32,7 @@ export const ChecklistSidePanel: React.FC<ChecklistSidePanelProps> = ({
   onScrollToStores,
   onNextStage,
   onPrevStage,
+  onDoItNow,
 }) => {
   const [filter, setFilter] = useState<'all' | 'tools' | 'materials' | 'missing'>('all');
 
@@ -320,6 +322,52 @@ export const ChecklistSidePanel: React.FC<ChecklistSidePanelProps> = ({
 
       {/* Bottom Store Route Trigger & Stage Navigation */}
       <div className="mt-6 pt-4 border-t border-slate-800/80 space-y-3">
+        {/* Do It Now: start today with what the customer already owns */}
+        {onDoItNow && (() => {
+          const blockers = missingItems.filter((i) => i.priority === 'critical');
+          const canWait = missingItems.filter((i) => i.priority !== 'critical');
+          return (
+            <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3.5 text-xs text-slate-200">
+              <div className="font-bold uppercase tracking-wider text-emerald-300 mb-1">Do It Now</div>
+              {blockers.length === 0 ? (
+                <p className="mb-2">
+                  You already have everything essential. Start the job now
+                  {canWait.length > 0 ? `; ${canWait.length} optional item${canWait.length > 1 ? 's' : ''} can wait.` : '.'}
+                </p>
+              ) : (
+                <>
+                  <p className="mb-1">
+                    Before you can start, you still need {blockers.length} essential item{blockers.length > 1 ? 's' : ''}:
+                  </p>
+                  <ul className="mb-2 list-disc pl-5 space-y-0.5">
+                    {blockers.map((b) => (
+                      <li key={b.id}>
+                        {b.name}
+                        {b.substitute ? <span className="text-slate-400"> · or: {b.substitute}</span> : null}
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
+              {canWait.some((c) => c.substitute) && (
+                <ul className="mb-2 list-disc pl-5 space-y-0.5 text-slate-400">
+                  {canWait.filter((c) => c.substitute).map((c) => (
+                    <li key={c.id}>{c.name}: {c.substitute}</li>
+                  ))}
+                </ul>
+              )}
+              <button
+                type="button"
+                onClick={onDoItNow}
+                disabled={blockers.length > 0}
+                className="w-full rounded-lg bg-emerald-400 hover:bg-emerald-300 disabled:opacity-40 disabled:cursor-not-allowed text-slate-950 font-bold py-2.5 uppercase tracking-wider"
+              >
+                {blockers.length === 0 ? 'Start the job now (skip the stores)' : 'Mark essentials as "I Have" to start now'}
+              </button>
+            </div>
+          );
+        })()}
+
         <button
           type="button"
           onClick={() => {

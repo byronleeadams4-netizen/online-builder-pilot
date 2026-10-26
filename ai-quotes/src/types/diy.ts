@@ -25,6 +25,8 @@ export interface InventoryItem {
   userHasItem: boolean;
   priority: 'critical' | 'recommended' | 'optional';
   whyNeeded: string;
+  /** Do It Now: what the customer can use instead if they don't have this item today. */
+  substitute?: string;
 }
 
 export interface JobStep {
