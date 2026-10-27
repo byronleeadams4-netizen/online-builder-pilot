@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" role="img" aria-label="Backyard timber fence with one broken slat">
+  <rect width="800" height="500" fill="#bfe3f5"/>
+  <rect y="360" width="800" height="140" fill="#6fa84b"/>
+  <circle cx="680" cy="80" r="40" fill="#ffd95a"/>
+  <rect x="40" y="150" width="30" height="260" fill="#6b4a2b"/>
+  <rect x="730" y="150" width="30" height="260" fill="#6b4a2b"/>
+  <rect x="40" y="190" width="720" height="22" fill="#7a5632"/>
+  <rect x="40" y="320" width="720" height="22" fill="#7a5632"/>
+  <g fill="#b98a55" stroke="#8a5f33" stroke-width="3">
+    <rect x="80" y="150" width="70" height="240"/>
+    <rect x="160" y="150" width="70" height="240"/>
+    <rect x="240" y="150" width="70" height="240"/>
+    <rect x="400" y="150" width="70" height="240"/>
+    <rect x="480" y="150" width="70" height="240"/>
+    <rect x="560" y="150" width="70" height="240"/>
+    <rect x="640" y="150" width="70" height="240"/>
+  </g>
+  <polygon points="320,150 390,150 372,230 340,262 352,300 330,390 320,390" fill="#b98a55" stroke="#8a5f33" stroke-width="3"/>
+  <polygon points="372,230 390,150 390,390 330,390 352,300 340,262" fill="#bfe3f5" opacity="0.0"/>
+  <g stroke="#5a3d20" stroke-width="3"><line x1="330" y1="205" x2="352" y2="212"/><line x1="335" y1="335" x2="350" y2="330"/></g>
+  <ellipse cx="400" cy="440" rx="300" ry="30" fill="#5d9340" opacity="0.6"/>
+</svg>
